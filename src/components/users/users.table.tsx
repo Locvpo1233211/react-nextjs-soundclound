@@ -24,6 +24,7 @@ const UserTable = () => {
     const [gender, setGender] = useState("");
     const [address, setAddress] = useState("");
     const [role, setRole] = useState("");
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         const url = "http://localhost:3030/api/v1/auth/login";
@@ -78,7 +79,6 @@ const UserTable = () => {
             dataIndex: "role",
         },
     ];
-    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const showModal = () => {
         setIsModalOpen(true);
