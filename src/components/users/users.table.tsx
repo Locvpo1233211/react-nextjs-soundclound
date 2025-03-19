@@ -8,44 +8,50 @@ import {
     Modal,
     Input,
     notification,
+    Popconfirm,
+    PopconfirmProps,
+    message,
 } from "antd";
 import { Value } from "sass";
+import CreateModal from "./create.user.modal";
+import UpdateUserModal from "./update.user.modal";
 interface IUser {
+    _id: string;
     email: string;
     name: string;
     role: string;
+    age: number;
+    gender: string;
+    address: string;
 }
 const UserTable = () => {
     const [listUser, setListUser] = useState([]);
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [age, setAge] = useState("");
-    const [gender, setGender] = useState("");
-    const [address, setAddress] = useState("");
-    const [role, setRole] = useState("");
-    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const [isCreateModalOpen, SetIsCreateModalOpen] = useState(false);
+    const [isUpdateModalOpen, SetIsUpdateModalOpen] = useState(false);
+    const [isUser, setIsUser] = useState<IUser | null>(null);
 
     useEffect(() => {
-        const url = "http://localhost:3030/api/v1/auth/login";
-
-        const fetchData = async () => {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    username: "admin@gmail.com",
-                    password: "123456",
-                }),
-            });
-            const data = await response.json();
-            console.log("dât", data);
-        };
         fetchData();
+        fetchUser();
     }, []);
 
+    const url = "http://localhost:3030/api/v1/auth/login";
+
+    const fetchData = async () => {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                username: "admin@gmail.com",
+                password: "123456",
+            }),
+        });
+        const data = await response.json();
+        console.log("dât", data);
+    };
     const accessToken =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJfaWQiOiI2N2M5MDNhOWE1ODNmYTM4NmQwZjI4NzkiLCJuYW1lIjoiaSBhbSBhZG1pbiIsInJvbGUiOnsiX2lkIjoiNjdjOTAzYTlhNTgzZmEzODZkMGYyODc0IiwibmFtZSI6IlNVUEVSIEFETUlOIn0sImlhdCI6MTc0MTc5MjM1NiwiZXhwIjoxNzQyNjU2MzU2fQ.iqXvFlSL-uwkyNFYBQ1t1d-2ebuSMDyXqPvGt5gaCV8";
     const url1 = "http://localhost:8000/api/v1/users/all";
@@ -61,7 +67,25 @@ const UserTable = () => {
 
         setListUser(data1.data.result);
     };
-    fetchUser();
+    const confirm = async (user: IUser) => {
+        const url = `http://localhost:8000/api/v1/users/${user._id}`;
+        const response = await fetch(url, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+        const data = await response.json();
+        console.log("data", data);
+        if (data.data.deleted === 1) {
+            message.success("Delete success");
+            fetchUser();
+        }
+    };
+
+    const cancel: PopconfirmProps["onCancel"] = () => {};
+
     const columns: TableProps<IUser>["columns"] = [
         {
             title: "Email",
@@ -78,73 +102,42 @@ const UserTable = () => {
             title: "Role",
             dataIndex: "role",
         },
+        {
+            title: "Action",
+            render: (value, record) => {
+                return (
+                    <div>
+                        <button
+                            onClick={() => {
+                                SetIsUpdateModalOpen(true);
+                                setIsUser(record);
+                            }}
+                        >
+                            edit
+                        </button>
+                        <Popconfirm
+                            title="Delete the task"
+                            description="Are you sure to delete this task?"
+                            onConfirm={() => {
+                                confirm(record);
+                            }}
+                            onCancel={cancel}
+                            okText="Yes"
+                            cancelText="No"
+                        >
+                            <Button danger>Delete</Button>
+                        </Popconfirm>
+                    </div>
+                );
+            },
+        },
     ];
 
     const showModal = () => {
-        setIsModalOpen(true);
+        SetIsCreateModalOpen(true);
     };
 
-    const handleOk = () => {
-        const url = "http://localhost:8000/api/v1/users";
-
-        const accessToken =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJfaWQiOiI2N2M5MDNhOWE1ODNmYTM4NmQwZjI4NzkiLCJuYW1lIjoiaSBhbSBhZG1pbiIsInJvbGUiOnsiX2lkIjoiNjdjOTAzYTlhNTgzZmEzODZkMGYyODc0IiwibmFtZSI6IlNVUEVSIEFETUlOIn0sImlhdCI6MTc0MTc5MjM1NiwiZXhwIjoxNzQyNjU2MzU2fQ.iqXvFlSL-uwkyNFYBQ1t1d-2ebuSMDyXqPvGt5gaCV8";
-
-        let user = {
-            name,
-            email,
-            password,
-            age,
-            gender,
-            address,
-            role,
-        };
-        console.log("name", user);
-
-        const fetchData = async () => {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${accessToken}`,
-                },
-                body: JSON.stringify(user),
-            });
-            const data = await response.json();
-            if (data.data) {
-                notification.success({
-                    message: "ADD USER SUCCESS",
-                });
-                setIsModalOpen(false);
-                handleCloseModel();
-                await fetchUser();
-            } else {
-                notification.error({
-                    message: "ADD USER FAIL",
-
-                    description: data.error,
-                });
-            }
-        };
-        fetchData();
-    };
-
-    const handleCancel = () => {
-        setIsModalOpen(false);
-    };
-    const handleCloseModel = () => {
-        setIsModalOpen(false);
-        setName("");
-        setEmail("");
-
-        setPassword("");
-        setAge("");
-
-        setGender("");
-        setAddress("");
-        setRole("");
-    };
-
+    console.log("a", isUser);
     return (
         <div>
             <div
@@ -160,73 +153,19 @@ const UserTable = () => {
             </div>
 
             <Table columns={columns} dataSource={listUser} />
-            <Modal
-                title="ADD USER"
-                open={isModalOpen}
-                onOk={handleOk}
-                onCancel={() => {
-                    handleCloseModel();
-                }}
-                maskClosable={false}
-            >
-                <div>
-                    <label htmlFor="">name</label>
-                    <Input
-                        placeholder="name"
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                    />{" "}
-                </div>
-                <div>
-                    <label htmlFor="">email</label>
-                    <Input
-                        placeholder="email"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                    />{" "}
-                </div>
-                <div>
-                    <label htmlFor="">password</label>
-                    <Input
-                        placeholder="password"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                    />{" "}
-                </div>
-                <div>
-                    <label htmlFor="">age</label>
-                    <Input
-                        placeholder="age"
-                        value={age}
-                        onChange={(event) => setAge(event.target.value)}
-                    />{" "}
-                </div>
-                <div>
-                    <label htmlFor="">Gender</label>
-                    <Input
-                        placeholder="Gender"
-                        value={gender}
-                        onChange={(event) => setGender(event.target.value)}
-                    />{" "}
-                </div>
-                <div>
-                    <label htmlFor="">Adress</label>
-                    <Input
-                        placeholder="Adress"
-                        value={address}
-                        onChange={(event) => setAddress(event.target.value)}
-                    />{" "}
-                </div>
+            <CreateModal
+                isCreateModalOpen={isCreateModalOpen}
+                SetIsCreateModalOpen={SetIsCreateModalOpen}
+                fetchUser={fetchUser}
+            />
 
-                <div>
-                    <label htmlFor="">Role</label>
-                    <Input
-                        placeholder="Role"
-                        value={role}
-                        onChange={(event) => setRole(event.target.value)}
-                    />{" "}
-                </div>
-            </Modal>
+            <UpdateUserModal
+                isUpdateModalOpen={isUpdateModalOpen}
+                SetIsUpdateModalOpen={SetIsUpdateModalOpen}
+                fetchUser={fetchUser}
+                isUser={isUser}
+                setIsUser={setIsUser}
+            />
             {/* <table>
                 <tr>
                     <th>Email</th>
