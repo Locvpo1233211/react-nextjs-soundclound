@@ -30,7 +30,12 @@ const UserTable = () => {
     const [isCreateModalOpen, SetIsCreateModalOpen] = useState(false);
     const [isUpdateModalOpen, SetIsUpdateModalOpen] = useState(false);
     const [isUser, setIsUser] = useState<IUser | null>(null);
-
+    const [meta, setMeta] = useState({
+        total: 0,
+        pages: 0,
+        current: 1,
+        pageSize: 10,
+    });
     useEffect(() => {
         fetchData();
         fetchUser();
@@ -50,11 +55,13 @@ const UserTable = () => {
             }),
         });
         const data = await response.json();
-        console.log("dât", data);
     };
     const accessToken =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0b2tlbiBsb2dpbiIsImlzcyI6ImZyb20gc2VydmVyIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJfaWQiOiI2N2M5MDNhOWE1ODNmYTM4NmQwZjI4NzkiLCJuYW1lIjoiaSBhbSBhZG1pbiIsInJvbGUiOnsiX2lkIjoiNjdjOTAzYTlhNTgzZmEzODZkMGYyODc0IiwibmFtZSI6IlNVUEVSIEFETUlOIn0sImlhdCI6MTc0MTc5MjM1NiwiZXhwIjoxNzQyNjU2MzU2fQ.iqXvFlSL-uwkyNFYBQ1t1d-2ebuSMDyXqPvGt5gaCV8";
-    const url1 = "http://localhost:8000/api/v1/users/all";
+    const url1 = `http://localhost:8000/api/v1/users?current=${meta.current}&pageSize=${meta.pageSize}`;
+
+    // get user
+
     const fetchUser = async () => {
         const response = await fetch(url1, {
             method: "GET",
@@ -66,7 +73,15 @@ const UserTable = () => {
         const data1 = await response.json();
 
         setListUser(data1.data.result);
+        setMeta({
+            total: data1.data.meta.total,
+            pages: data1.data.meta.pages,
+            current: data1.data.meta.current,
+            pageSize: data1.data.meta.pageSize,
+        });
     };
+    console.log(meta);
+    // delete user
     const confirm = async (user: IUser) => {
         const url = `http://localhost:8000/api/v1/users/${user._id}`;
         const response = await fetch(url, {
@@ -77,7 +92,6 @@ const UserTable = () => {
             },
         });
         const data = await response.json();
-        console.log("data", data);
         if (data.data.deleted === 1) {
             message.success("Delete success");
             fetchUser();
@@ -137,7 +151,27 @@ const UserTable = () => {
         SetIsCreateModalOpen(true);
     };
 
-    console.log("a", isUser);
+    const handleOnchange = async (page: number, pageSize: number) => {
+        const url1 = `http://localhost:8000/api/v1/users?current=${page}&pageSize=${pageSize}`;
+
+        const response = await fetch(url1, {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+        });
+        const data1 = await response.json();
+
+        setListUser(data1.data.result);
+        setMeta({
+            total: data1.data.meta.total,
+            pages: data1.data.meta.pages,
+            current: data1.data.meta.current,
+            pageSize: data1.data.meta.pageSize,
+        });
+    };
+
     return (
         <div>
             <div
@@ -152,7 +186,19 @@ const UserTable = () => {
                 </Button>
             </div>
 
-            <Table columns={columns} dataSource={listUser} />
+            <Table
+                columns={columns}
+                dataSource={listUser}
+                pagination={{
+                    current: meta.current,
+                    pageSize: meta.pageSize,
+                    total: meta.total,
+                    showTotal: (total, range) =>
+                        `${range[0]}-${range[1]} of ${total} items`,
+                    onChange: handleOnchange,
+                    showSizeChanger: true,
+                }}
+            />
             <CreateModal
                 isCreateModalOpen={isCreateModalOpen}
                 SetIsCreateModalOpen={SetIsCreateModalOpen}
