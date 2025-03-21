@@ -75,7 +75,9 @@ const CreateModal = (props: IProps) => {
         <Modal
             title="ADD USER"
             open={isCreateModalOpen}
-            onOk={form.submit}
+            onOk={() => {
+                form.submit();
+            }}
             onCancel={() => {
                 handleCloseModel();
             }}
